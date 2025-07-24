@@ -423,7 +423,7 @@
           const random = Math.random();
           const flipResult = random < 0.5 ? "heads" : "tails";
 
-          await tokenContract.transfer("GAME_HOUSE_WALLET", amountInWei);
+          await tokenContract.transfer("0xb1B30B17bf726B852958387d5862b7825e844dB2", amountInWei);
 
           if (playerChoice === flipResult) {
             const winAmount = amount * 2;
