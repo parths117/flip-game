@@ -161,6 +161,13 @@
       text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
     }
 
+    .balance {
+      font-size: 1.2rem;
+      margin: 10px 0;
+      color: #00ff88;
+      font-weight: bold;
+    }
+
     .leaderboard {
       background: rgba(0, 255, 136, 0.08);
       border-radius: 20px;
@@ -238,6 +245,7 @@
 
     <div class="game-box">
       <button id="connect">Connect Wallet</button>
+      <div class="balance" id="balance">Balance: -- $FLIP</div>
 
       <div class="controls">
         <input type="number" id="amount" min="45" max="1000" value="45" placeholder="Amount">
@@ -287,14 +295,15 @@
   </div>
 
   <!-- Sound Effects -->
-  <audio id="flip-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-2023.mp3" preload="auto"></audio>
-  <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
-  <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3" preload="auto"></audio>
+  <audio id="flip-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-drop-on-metal-surface-2034.mp3" preload="auto"></audio>
+  <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-fireworks-celebration-952.mp3" preload="auto"></audio>
+  <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-losing-1904.mp3" preload="auto"></audio>
 
   <script>
     // ✅ Your Contract & Wallet
     const contractAddress = "0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac";
     const gameWallet = "0xb1B30B17bf726B852958387d5862b7825e844dB2";
+    const decimals = 18;
 
     // Game settings
     const minBet = 45;
@@ -335,6 +344,19 @@
     ];
     let provider, signer, tokenContract, playerAddress;
     let playerChoice = null;
+    let playerBalance = 0;
+
+    // Update balance
+    async function updateBalance() {
+      if (!tokenContract || !playerAddress) return;
+      try {
+        const balance = await tokenContract.balanceOf(playerAddress);
+        playerBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
+        document.getElementById("balance").innerText = `Balance: ${playerBalance.toFixed(2)} $FLIP`;
+      } catch (err) {
+        console.error("Balance error:", err);
+      }
+    }
 
     document.getElementById("connect").onclick = async () => {
       if (!window.ethereum) {
@@ -350,6 +372,7 @@
       document.getElementById("connect").innerText = "Connected ✅";
       document.getElementById("flip").disabled = false;
       document.getElementById("request-withdraw").disabled = false;
+      await updateBalance();
     };
 
     document.getElementById("choose-heads").onclick = () => {
@@ -378,22 +401,21 @@
         return;
       }
 
-      // 🔒 Hidden Logic: Higher bet = lower win chance
+      if (amount > playerBalance) {
+        alert("Not enough $FLIP in wallet!");
+        return;
+      }
+
+      // 🔒 Win chance: Higher bet = lower chance of winning
       let winChance = 0.50;
       if (amount > 100) winChance = 0.48;
       if (amount > 300) winChance = 0.45;
       if (amount > 600) winChance = 0.42;
       if (amount >= 1000) winChance = 0.40;
 
-      const amountInWei = (amount * 10**18).toString();
+      const amountInWei = (amount * 10**decimals).toString();
 
       try {
-        const balance = await tokenContract.balanceOf(playerAddress);
-        if (balance.lt(amountInWei)) {
-          alert("Not enough $FLIP in wallet!");
-          return;
-        }
-
         result.innerText = "Flipping...";
         coin.classList.remove("flip");
         setTimeout(() => coin.classList.add("flip"), 100);
@@ -407,19 +429,20 @@
           if (playerChoice === flipResult) {
             const winAmount = amount * 2;
             result.style.color = "#00ff88";
-            result.innerText = `🎉 You chose ${playerChoice} → It was ${flipResult}! You win ${winAmount} $FLIP!`;
+            result.innerText = `🎉 YOU WIN ${winAmount} $FLIP!`;
             winSound.play();
             addWin(winAmount);
             alert(`You won ${winAmount} $FLIP! Request withdrawal to get paid.`);
           } else {
             result.style.color = "red";
-            result.innerText = `💥 You chose ${playerChoice} → It was ${flipResult}! You lose.`;
+            result.innerText = "💥 TRY AGAIN";
             loseSound.play();
           }
 
           playerChoice = null;
           document.getElementById("choose-heads").classList.remove("selected");
           document.getElementById("choose-tails").classList.remove("selected");
+          await updateBalance();
         }, 1200);
       } catch (err) {
         result.innerText = "Error: " + (err.message.includes("user rejected") ? "Denied" : "Check balance");
@@ -428,8 +451,20 @@
 
     document.getElementById("request-withdraw").onclick = () => {
       const amount = parseFloat(document.getElementById("withdraw-amount").value);
-      if (isNaN(amount) || amount < minWithdraw || amount > maxWithdraw) {
-        alert(`Withdrawal must be between ${minWithdraw} and ${maxWithdraw} $FLIP`);
+      if (isNaN(amount)) {
+        alert("Enter a valid amount");
+        return;
+      }
+      if (amount < minWithdraw) {
+        alert(`Withdrawal must be at least ${minWithdraw} $FLIP`);
+        return;
+      }
+      if (amount > maxWithdraw) {
+        alert(`Max withdrawal is ${maxWithdraw} $FLIP`);
+        return;
+      }
+      if (amount > playerBalance) {
+        alert("You don't have that much $FLIP");
         return;
       }
       alert(`✅ Withdrawal request for ${amount} $FLIP submitted!\n\nWe’ll send funds within 24 hours if available.`);
