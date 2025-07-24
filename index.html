@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>$FLIP Coin Flip Game</title>
   <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -48,7 +48,6 @@
                   0 0 80px rgba(0, 255, 136, 0.1);
       margin-bottom: 50px;
       transition: transform 0.4s, box-shadow 0.4s;
-      border-radius: 20px;
     }
     .game-box:hover {
       transform: translateY(-8px);
@@ -86,7 +85,6 @@
     .coin .heads { 
       background: radial-gradient(circle, #ffeb3b, #fbc02d);
       color: #000;
-      text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
     .coin .tails { 
       background: radial-gradient(circle, #42a5f5, #1976d2);
@@ -103,7 +101,6 @@
     .choice-buttons button {
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
-      margin: 0 10px;
       padding: 16px 30px;
       font-size: 18px;
       border-radius: 15px;
@@ -123,7 +120,6 @@
       color: #000;
       font-weight: bold;
       box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-      border-color: #00cc6a;
     }
 
     input, button {
@@ -140,7 +136,6 @@
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
       border: 2px solid #666;
-      font-size: 1.2rem;
     }
     input:focus { outline: none; border-color: #00ff88; }
     button.primary {
@@ -156,7 +151,6 @@
       transform: scale(1.08);
       box-shadow: 0 8px 30px rgba(0, 255, 136, 0.6);
     }
-    button.primary:active { transform: scale(1.05); }
 
     #result {
       font-size: 2rem;
@@ -166,7 +160,6 @@
       text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
     }
 
-    /* Leaderboard */
     .leaderboard {
       background: rgba(0, 255, 136, 0.08);
       border-radius: 20px;
@@ -193,26 +186,15 @@
       transition: 0.3s;
       border-left: 4px solid #00ff88;
     }
-    .winner:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateX(5px);
-    }
 
-    /* Withdraw Section */
     .withdraw-section {
       margin: 40px 0;
       padding: 30px;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 18px;
       border: 2px solid #666;
-      transition: 0.3s;
-    }
-    .withdraw-section:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: #00ff88;
     }
 
-    /* Rules */
     .rules {
       font-size: 0.9rem;
       opacity: 0.8;
@@ -223,7 +205,6 @@
       text-align: left;
       margin: 20px 40px;
       padding-left: 20px;
-      position: relative;
     }
     .rules li {
       margin: 10px 0;
@@ -238,12 +219,10 @@
       color: #00ff88;
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
       h1 { font-size: 2.2rem; }
-      .game-box { padding: 30px 20px; }
       .coin-container { width: 120px; height: 120px; }
-      .choice-buttons { flex-direction: column; align-items: center; }
+      .choice-buttons { flex-direction: column; }
       input, button { font-size: 16px; padding: 12px; }
       #result { font-size: 1.5rem; }
     }
@@ -312,8 +291,9 @@
   <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3" preload="auto"></audio>
 
   <script>
-    // 🔁 REPLACE ONLY THIS:
-    const contractAddress = "0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac";
+    // 🔁 REPLACE THESE VALUES:
+    const contractAddress = "0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac"; // ← Your $FLIP token
+    const gameWallet = "0xb1B30B17bf726B852958387d5862b7825e844dB2";         // ← Your burner wallet
 
     // Game settings
     const minBet = 45;
@@ -366,12 +346,11 @@
       playerAddress = await signer.getAddress();
       tokenContract = new ethers.Contract(contractAddress, tokenABI, signer);
       document.getElementById("connect").disabled = true;
-      document.getElementById("connect").innerText = "Wallet Connected ✅";
+      document.getElementById("connect").innerText = "Connected ✅";
       document.getElementById("flip").disabled = false;
       document.getElementById("request-withdraw").disabled = false;
     };
 
-    // Handle choice
     document.getElementById("choose-heads").onclick = () => {
       playerChoice = "heads";
       document.getElementById("choose-heads").classList.add("selected");
@@ -422,8 +401,7 @@
         setTimeout(async () => {
           const random = Math.random();
           const flipResult = random < 0.5 ? "heads" : "tails";
-
-          await tokenContract.transfer("0xb1B30B17bf726B852958387d5862b7825e844dB2", amountInWei);
+          await tokenContract.transfer(gameWallet, amountInWei);
 
           if (playerChoice === flipResult) {
             const winAmount = amount * 2;
@@ -438,7 +416,6 @@
             loseSound.play();
           }
 
-          // Reset choice
           playerChoice = null;
           document.getElementById("choose-heads").classList.remove("selected");
           document.getElementById("choose-tails").classList.remove("selected");
@@ -448,7 +425,6 @@
       }
     };
 
-    // Withdrawal Request
     document.getElementById("request-withdraw").onclick = () => {
       const amount = parseFloat(document.getElementById("withdraw-amount").value);
       if (isNaN(amount) || amount < minWithdraw || amount > maxWithdraw) {
