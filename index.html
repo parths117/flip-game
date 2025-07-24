@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>$FLIP Coin Flip Game</title>
+  <!-- Fixed: Use reliable CDN -->
   <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -291,9 +292,9 @@
   <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3" preload="auto"></audio>
 
   <script>
-    // 🔁 REPLACE THESE VALUES:
-    const contractAddress = "0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac"; // ← Your $FLIP token
-    const gameWallet = "0xb1B30B17bf726B852958387d5862b7825e844dB2";         // ← Your burner wallet
+    // ✅ Your Contract & Wallet
+    const contractAddress = "0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac";
+    const gameWallet = "0xb1B30B17bf726B852958387d5862b7825e844dB2";
 
     // Game settings
     const minBet = 45;
