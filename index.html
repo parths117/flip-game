@@ -188,9 +188,11 @@
 
       <div class="controls">
         <input type="number" id="amount" min="45" max="1000" value="45" placeholder="Amount">
+        <label for="balls">Number of Balls:</label>
+        <input type="number" id="balls" min="1" max="10" value="1" placeholder="Balls">
       </div>
 
-      <button id="drop" disabled class="primary">DROP BALL</button>
+      <button id="drop" disabled class="primary">DROP BALLS</button>
 
       <div class="plinko-board" id="board">
         <!-- Pegs and ball will be added by JS -->
@@ -222,6 +224,8 @@
       <p>📌 Game Rules:</p>
       <ul>
         <li>Min bet: 45 $FLIP | Max: 1,000 $FLIP</li>
+        <li>Choose number of balls (1–10)</li>
+        <li>Higher balls = lower payouts per ball</li>
         <li>Drop the ball → win based on final slot</li>
         <li>x5 = jackpot! x0.1 = small loss</li>
         <li>Withdrawal requests checked manually</li>
@@ -311,20 +315,36 @@
 
     document.getElementById("drop").onclick = async () => {
       const amount = parseFloat(document.getElementById("amount").value);
-      const board = document.getElementById("board");
-      const result = document.getElementById("result");
+      const numBalls = parseInt(document.getElementById("balls").value);
 
       if (isNaN(amount) || amount < minBet || amount > maxBet) {
         alert(`Bet must be between ${minBet} and ${maxBet} $FLIP`);
         return;
       }
 
-      if (amount > playerBalance) {
+      if (numBalls < 1 || numBalls > 10) {
+        alert("Choose between 1 and 10 balls.");
+        return;
+      }
+
+      if (amount * numBalls > playerBalance) {
         alert("Not enough $FLIP in wallet!");
         return;
       }
 
-      // Create ball
+      // Calculate total bet
+      const totalBet = amount * numBalls;
+
+      // Simulate each ball drop
+      for (let i = 0; i < numBalls; i++) {
+        await simulateBallDrop(amount, board, result);
+      }
+
+      // Update balance after all balls
+      await updateBalance();
+    };
+
+    async function simulateBallDrop(ballAmount, board, result) {
       const ball = document.createElement("div");
       ball.className = "ball";
       ball.style.left = `${board.offsetWidth / 2 - 8}px`;
@@ -332,7 +352,6 @@
       board.appendChild(ball);
       dropSound.play();
 
-      // Simulate drop
       let pos = 0.5; // 0 to 1
       for (let i = 0; i < 20; i++) {
         await new Promise(r => setTimeout(r, 100));
@@ -344,24 +363,24 @@
       // Final slot
       const slotIndex = Math.floor(pos * 9);
       const multipliers = [0.1, 0.5, 1, 2, 5, 2, 1, 0.5, 0.1];
-      const multiplier = multipliers[slotIndex];
-      const winAmount = amount * multiplier;
+      const adjustedMultipliers = multipliers.map(multiplier => multiplier / numBalls);
+      const multiplier = adjustedMultipliers[slotIndex];
+      const winAmount = ballAmount * multiplier;
 
       setTimeout(async () => {
-        await tokenContract.transfer(gameWallet, (amount * 10**decimals).toString());
+        await tokenContract.transfer(gameWallet, (ballAmount * 10**decimals).toString());
 
         if (multiplier >= 2) {
-          result.innerHTML = `<span style="color:#00ff88">🎉 HOORAY! YOU WON ${winAmount.toFixed(2)} $FLIP! (x${multiplier})</span>`;
+          result.innerHTML += `<span style="color:#00ff88">🎉 HOORAY! YOU WON ${winAmount.toFixed(2)} $FLIP! (x${multiplier})<br></span>`;
           winSound.play();
         } else {
-          result.innerHTML = `<span style="color:red">💥 LET'S TRY AGAIN (x${multiplier})</span>`;
+          result.innerHTML += `<span style="color:red">💥 LET'S TRY AGAIN (x${multiplier})<br></span>`;
           loseSound.play();
         }
 
         board.removeChild(ball);
-        await updateBalance();
       }, 500);
-    };
+    }
 
     // Buy $FLIP Button
     document.getElementById("buy-flip").onclick = () => {
