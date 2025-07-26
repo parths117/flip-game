@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>$FLIP Coin Flip Game</title>
-  <!-- Reliable ethers.js CDN -->
   <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -16,7 +15,6 @@
       min-height: 100vh;
       padding: 20px;
       text-align: center;
-      background-attachment: fixed;
     }
     header {
       margin-bottom: 40px;
@@ -48,12 +46,6 @@
       box-shadow: 0 0 40px rgba(0, 255, 136, 0.2),
                   0 0 80px rgba(0, 255, 136, 0.1);
       margin-bottom: 50px;
-      transition: transform 0.4s, box-shadow 0.4s;
-    }
-    .game-box:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 15px 50px rgba(0, 255, 136, 0.3),
-                  0 0 100px rgba(0, 255, 136, 0.2);
     }
     .coin-container {
       perspective: 2000px;
@@ -70,6 +62,7 @@
       border-radius: 50%;
       border: 5px solid #ffd700;
       box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      transform: rotateY(180deg); /* 👈 STARTS WITH TAILS */
     }
     .coin .side {
       position: absolute;
@@ -91,7 +84,7 @@
       background: radial-gradient(circle, #42a5f5, #1976d2);
       color: #fff;
     }
-    .coin.flip { transform: rotateY(1800deg) rotateX(10deg); }
+    .coin.flip { transform: rotateY(0deg) rotateX(10deg); } /* Flips to HEADS */
 
     .choice-buttons {
       margin: 30px 0;
@@ -168,7 +161,6 @@
       font-weight: bold;
     }
 
-    /* Win/Loss Animation */
     @keyframes pop {
       0% { transform: scale(1); }
       50% { transform: scale(1.2); color: #00ff88; }
@@ -179,7 +171,6 @@
       25% { transform: translateX(-10px); }
       75% { transform: translateX(10px); }
     }
-
     .win-text {
       animation: pop 0.8s ease-in-out;
     }
@@ -217,14 +208,6 @@
       left: 0;
       top: 0;
       color: #00ff88;
-    }
-
-    @media (max-width: 768px) {
-      h1 { font-size: 2.2rem; }
-      .coin-container { width: 120px; height: 120px; }
-      .choice-buttons { flex-direction: column; }
-      input, button { font-size: 16px; padding: 12px; }
-      #result { font-size: 1.5rem; }
     }
   </style>
 </head>
@@ -265,15 +248,6 @@
       <h3>🪙 Buy $FLIP</h3>
       <p>Swap BNB for $FLIP directly</p>
       <button id="buy-flip" class="primary">Buy $FLIP on PancakeSwap</button>
-    </div>
-
-    <!-- Withdrawal Section -->
-    <div class="withdraw-section">
-      <h3>💰 Withdraw Winnings</h3>
-      <p>Min: 100 $FLIP | Max: 10,000 $FLIP</p>
-      <p style="color:#00ff88; font-weight: bold;">Withdrawal processed within 24 hours</p>
-      <input type="number" id="withdraw-amount" min="100" max="10000" placeholder="Amount to withdraw">
-      <button id="request-withdraw" disabled class="primary">Request Withdrawal</button>
     </div>
 
     <div class="rules">
@@ -344,7 +318,6 @@
       document.getElementById("connect").disabled = true;
       document.getElementById("connect").innerText = "Connected ✅";
       document.getElementById("flip").disabled = false;
-      document.getElementById("request-withdraw").disabled = false;
       await updateBalance();
     };
 
@@ -422,28 +395,6 @@
     document.getElementById("buy-flip").onclick = () => {
       const url = `https://pancakeswap.finance/swap?outputCurrency=${contractAddress}`;
       window.open(url, "_blank");
-    };
-
-    // Withdrawal Request
-    document.getElementById("request-withdraw").onclick = () => {
-      const amount = parseFloat(document.getElementById("withdraw-amount").value);
-      if (isNaN(amount)) {
-        alert("Enter a valid amount");
-        return;
-      }
-      if (amount < minWithdraw) {
-        alert(`Withdrawal must be at least ${minWithdraw} $FLIP`);
-        return;
-      }
-      if (amount > maxWithdraw) {
-        alert(`Max withdrawal is ${maxWithdraw} $FLIP`);
-        return;
-      }
-      if (amount > playerBalance) {
-        alert("You don't have that much $FLIP");
-        return;
-      }
-      alert(`✅ Withdrawal request for ${amount} $FLIP submitted!\n\nWe’ll send funds within 24 hours.`);
     };
   </script>
 </body>
