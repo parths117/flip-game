@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>$FLIP Coin Flip Game</title>
-  <!-- Fixed: Use reliable CDN -->
+  <!-- Fixed: Use reliable ethers.js -->
   <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -168,39 +168,31 @@
       font-weight: bold;
     }
 
-    .leaderboard {
-      background: rgba(0, 255, 136, 0.08);
-      border-radius: 20px;
-      padding: 30px;
-      border: 2px solid #00ff8840;
-      box-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+    /* Win/Loss Animation */
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); color: #00ff88; }
+      100% { transform: scale(1); }
     }
-    .leaderboard h2 {
-      color: #00ff88;
-      margin-bottom: 20px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 2rem;
-      text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
-    }
-    .winner {
-      display: flex;
-      justify-content: space-between;
-      padding: 16px;
-      margin: 10px 0;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 14px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.2rem;
-      transition: 0.3s;
-      border-left: 4px solid #00ff88;
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
     }
 
-    .withdraw-section {
-      margin: 40px 0;
-      padding: 30px;
+    .win-text {
+      animation: pop 0.8s ease-in-out;
+    }
+    .lose-text {
+      animation: shake 0.8s ease-in-out;
+      color: red;
+    }
+
+    .buy-section {
+      margin: 30px 0;
+      padding: 20px;
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 18px;
-      border: 2px solid #666;
+      border-radius: 15px;
     }
 
     .rules {
@@ -268,13 +260,11 @@
       <div id="result"></div>
     </div>
 
-    <!-- Withdrawal Section -->
-    <div class="withdraw-section">
-      <h3>💰 Withdraw Winnings</h3>
-      <p>Min: 100 $FLIP | Max: 10,000 $FLIP</p>
-      <p style="color:#00ff88; font-weight: bold;">Withdrawal processed within 24 hours</p>
-      <input type="number" id="withdraw-amount" min="100" max="10000" placeholder="Amount to withdraw">
-      <button id="request-withdraw" disabled class="primary">Request Withdrawal</button>
+    <!-- Buy $FLIP Section -->
+    <div class="buy-section">
+      <h3>🪙 Buy $FLIP</h3>
+      <p>Swap BNB for $FLIP directly</p>
+      <button id="buy-flip" class="primary">Buy $FLIP on PancakeSwap</button>
     </div>
 
     <div class="rules">
@@ -287,17 +277,12 @@
         <li>Paid within 24 hours if funds available</li>
       </ul>
     </div>
-
-    <div class="leaderboard">
-      <h2>🏆 TOP WINNERS</h2>
-      <div id="leaderboard-entries"></div>
-    </div>
   </div>
 
   <!-- Sound Effects -->
   <audio id="flip-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-drop-on-metal-surface-2034.mp3" preload="auto"></audio>
   <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-fireworks-celebration-952.mp3" preload="auto"></audio>
-  <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-losing-1904.mp3" preload="auto"></audio>
+  <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
 
   <script>
     // ✅ Your Contract & Wallet
@@ -315,27 +300,6 @@
     const flipSound = document.getElementById("flip-sound");
     const winSound = document.getElementById("win-sound");
     const loseSound = document.getElementById("lose-sound");
-
-    // Leaderboard
-    let leaderboard = JSON.parse(localStorage.getItem("flipLeaderboard")) || [];
-    function updateLeaderboard() {
-      const el = document.getElementById("leaderboard-entries");
-      el.innerHTML = "";
-      leaderboard.slice(0, 5).forEach(p => {
-        const div = document.createElement("div");
-        div.className = "winner";
-        div.innerHTML = `<span>${p.name}</span> <span>🔥 ${p.won} $FLIP</span>`;
-        el.appendChild(div);
-      });
-    }
-    function addWin(amount) {
-      const name = "Player" + Math.floor(Math.random() * 9000 + 1000);
-      leaderboard.unshift({ name, won: amount });
-      if (leaderboard.length > 50) leaderboard.pop();
-      localStorage.setItem("flipLeaderboard", JSON.stringify(leaderboard));
-      updateLeaderboard();
-    }
-    updateLeaderboard();
 
     // Game Logic
     const tokenABI = [
@@ -355,6 +319,7 @@
         document.getElementById("balance").innerText = `Balance: ${playerBalance.toFixed(2)} $FLIP`;
       } catch (err) {
         console.error("Balance error:", err);
+        document.getElementById("balance").innerText = "Balance: -- $FLIP";
       }
     }
 
@@ -371,7 +336,6 @@
       document.getElementById("connect").disabled = true;
       document.getElementById("connect").innerText = "Connected ✅";
       document.getElementById("flip").disabled = false;
-      document.getElementById("request-withdraw").disabled = false;
       await updateBalance();
     };
 
@@ -428,14 +392,11 @@
 
           if (playerChoice === flipResult) {
             const winAmount = amount * 2;
-            result.style.color = "#00ff88";
-            result.innerText = `🎉 YOU WIN ${winAmount} $FLIP!`;
+            result.innerHTML = `<span class="win-text">🎉 HOORAY! YOU WON ${winAmount} $FLIP!</span>`;
             winSound.play();
-            addWin(winAmount);
             alert(`You won ${winAmount} $FLIP! Request withdrawal to get paid.`);
           } else {
-            result.style.color = "red";
-            result.innerText = "💥 TRY AGAIN";
+            result.innerHTML = `<span class="lose-text">💥 LET'S TRY AGAIN</span>`;
             loseSound.play();
           }
 
@@ -449,25 +410,10 @@
       }
     };
 
-    document.getElementById("request-withdraw").onclick = () => {
-      const amount = parseFloat(document.getElementById("withdraw-amount").value);
-      if (isNaN(amount)) {
-        alert("Enter a valid amount");
-        return;
-      }
-      if (amount < minWithdraw) {
-        alert(`Withdrawal must be at least ${minWithdraw} $FLIP`);
-        return;
-      }
-      if (amount > maxWithdraw) {
-        alert(`Max withdrawal is ${maxWithdraw} $FLIP`);
-        return;
-      }
-      if (amount > playerBalance) {
-        alert("You don't have that much $FLIP");
-        return;
-      }
-      alert(`✅ Withdrawal request for ${amount} $FLIP submitted!\n\nWe’ll send funds within 24 hours if available.`);
+    // Buy $FLIP Button
+    document.getElementById("buy-flip").onclick = () => {
+      const url = `https://pancakeswap.finance/swap?outputCurrency=${contractAddress}`;
+      window.open(url, "_blank");
     };
   </script>
 </body>
