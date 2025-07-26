@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>$FLIP Coin Flip Game</title>
-  <!-- Fixed: Use reliable ethers.js -->
+  <!-- Reliable ethers.js CDN -->
   <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -267,6 +267,15 @@
       <button id="buy-flip" class="primary">Buy $FLIP on PancakeSwap</button>
     </div>
 
+    <!-- Withdrawal Section -->
+    <div class="withdraw-section">
+      <h3>💰 Withdraw Winnings</h3>
+      <p>Min: 100 $FLIP | Max: 10,000 $FLIP</p>
+      <p style="color:#00ff88; font-weight: bold;">Withdrawal processed within 24 hours</p>
+      <input type="number" id="withdraw-amount" min="100" max="10000" placeholder="Amount to withdraw">
+      <button id="request-withdraw" disabled class="primary">Request Withdrawal</button>
+    </div>
+
     <div class="rules">
       <p>📌 Game Rules:</p>
       <ul>
@@ -274,7 +283,6 @@
         <li>Choose heads or tails before flip</li>
         <li>Win 2x if your choice matches</li>
         <li>Withdrawal requests checked manually</li>
-        <li>Paid within 24 hours if funds available</li>
       </ul>
     </div>
   </div>
@@ -336,6 +344,7 @@
       document.getElementById("connect").disabled = true;
       document.getElementById("connect").innerText = "Connected ✅";
       document.getElementById("flip").disabled = false;
+      document.getElementById("request-withdraw").disabled = false;
       await updateBalance();
     };
 
@@ -394,7 +403,6 @@
             const winAmount = amount * 2;
             result.innerHTML = `<span class="win-text">🎉 HOORAY! YOU WON ${winAmount} $FLIP!</span>`;
             winSound.play();
-            alert(`You won ${winAmount} $FLIP! Request withdrawal to get paid.`);
           } else {
             result.innerHTML = `<span class="lose-text">💥 LET'S TRY AGAIN</span>`;
             loseSound.play();
@@ -414,6 +422,28 @@
     document.getElementById("buy-flip").onclick = () => {
       const url = `https://pancakeswap.finance/swap?outputCurrency=${contractAddress}`;
       window.open(url, "_blank");
+    };
+
+    // Withdrawal Request
+    document.getElementById("request-withdraw").onclick = () => {
+      const amount = parseFloat(document.getElementById("withdraw-amount").value);
+      if (isNaN(amount)) {
+        alert("Enter a valid amount");
+        return;
+      }
+      if (amount < minWithdraw) {
+        alert(`Withdrawal must be at least ${minWithdraw} $FLIP`);
+        return;
+      }
+      if (amount > maxWithdraw) {
+        alert(`Max withdrawal is ${maxWithdraw} $FLIP`);
+        return;
+      }
+      if (amount > playerBalance) {
+        alert("You don't have that much $FLIP");
+        return;
+      }
+      alert(`✅ Withdrawal request for ${amount} $FLIP submitted!\n\nWe’ll send funds within 24 hours.`);
     };
   </script>
 </body>
