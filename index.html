@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>$FLIP Coin Flip Game</title>
+  <title>$FLIP Plinko Game</title>
   <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -43,78 +43,55 @@
       padding: 50px;
       backdrop-filter: blur(12px);
       border: 2px solid #00ff8830;
-      box-shadow: 0 0 40px rgba(0, 255, 136, 0.2),
-                  0 0 80px rgba(0, 255, 136, 0.1);
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.2);
       margin-bottom: 50px;
     }
-    .coin-container {
-      perspective: 2000px;
-      width: 160px;
-      height: 160px;
-      margin: 60px auto;
-      position: relative;
-    }
-    .coin {
-      width: 100%; height: 100%;
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      border-radius: 50%;
-      border: 5px solid #ffd700;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-      transform: rotateY(180deg); /* 👈 STARTS WITH TAILS */
-    }
-    .coin .side {
-      position: absolute;
-      width: 100%; height: 100%;
-      backface-visibility: hidden;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.4rem;
-      font-weight: bold;
-      text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    }
-    .coin .heads { 
-      background: radial-gradient(circle, #ffeb3b, #fbc02d);
-      color: #000;
-    }
-    .coin .tails { 
-      background: radial-gradient(circle, #42a5f5, #1976d2);
-      color: #fff;
-    }
-    .coin.flip { transform: rotateY(0deg) rotateX(10deg); } /* Flips to HEADS */
-
-    .choice-buttons {
-      margin: 30px 0;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-    }
-    .choice-buttons button {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      padding: 16px 30px;
-      font-size: 18px;
+    .plinko-board {
+      width: 500px;
+      height: 400px;
+      margin: 40px auto;
+      background: #1a1a2e;
+      border: 3px solid #ffd700;
       border-radius: 15px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border: 2px solid #666;
-      font-family: 'Orbitron', sans-serif;
-      min-width: 180px;
+      position: relative;
+      overflow: hidden;
     }
-    .choice-buttons button:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.05);
-      border-color: #00ff88;
-    }
-    .choice-buttons button.selected {
+    .peg {
+      position: absolute;
+      width: 12px;
+      height: 12px;
       background: #00ff88;
-      color: #000;
-      font-weight: bold;
-      box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+      border-radius: 50%;
     }
+    .ball {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: radial-gradient(circle, #fff, #ccc);
+      border-radius: 50%;
+      z-index: 10;
+      transition: none;
+    }
+    .slots {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .slot {
+      flex: 1;
+      padding: 10px 5px;
+      background: #333;
+      margin: 0 2px;
+      border-radius: 8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+    }
+    .slot-0 { background: #d32f2f; }
+    .slot-1, .slot-7 { background: #1976d2; }
+    .slot-2, .slot-6 { background: #388e3c; }
+    .slot-3, .slot-5 { background: #00897b; }
+    .slot-4 { background: #ff8f00; }
 
     input, button {
       padding: 16px 24px;
@@ -131,7 +108,6 @@
       color: #fff;
       border: 2px solid #666;
     }
-    input:focus { outline: none; border-color: #00ff88; }
     button.primary {
       background: linear-gradient(45deg, #00ff88, #00cc6a);
       color: #000;
@@ -159,24 +135,6 @@
       margin: 10px 0;
       color: #00ff88;
       font-weight: bold;
-    }
-
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); color: #00ff88; }
-      100% { transform: scale(1); }
-    }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      75% { transform: translateX(10px); }
-    }
-    .win-text {
-      animation: pop 0.8s ease-in-out;
-    }
-    .lose-text {
-      animation: shake 0.8s ease-in-out;
-      color: red;
     }
 
     .buy-section {
@@ -209,13 +167,19 @@
       top: 0;
       color: #00ff88;
     }
+
+    @media (max-width: 600px) {
+      .plinko-board { width: 300px; height: 300px; }
+      h1 { font-size: 2.2rem; }
+      input, button { font-size: 16px; padding: 12px; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🪙 $FLIP COIN FLIP</h1>
-      <p>Choose heads or tails. Win 2x if you're right.</p>
+      <h1>🪙 $FLIP PLINKO</h1>
+      <p>Drop the ball. Win up to 5x your bet!</p>
     </header>
 
     <div class="game-box">
@@ -226,18 +190,22 @@
         <input type="number" id="amount" min="45" max="1000" value="45" placeholder="Amount">
       </div>
 
-      <div class="choice-buttons">
-        <button id="choose-heads">🪙 HEADS</button>
-        <button id="choose-tails">🪙 TAILS</button>
+      <button id="drop" disabled class="primary">DROP BALL</button>
+
+      <div class="plinko-board" id="board">
+        <!-- Pegs and ball will be added by JS -->
       </div>
 
-      <button id="flip" disabled class="primary">FLIP COIN</button>
-
-      <div class="coin-container">
-        <div class="coin" id="coin">
-          <div class="side heads">🪙 HEADS</div>
-          <div class="side tails">🪙 TAILS</div>
-        </div>
+      <div class="slots">
+        <div class="slot slot-0">x0.1</div>
+        <div class="slot slot-1">x0.5</div>
+        <div class="slot slot-2">x1</div>
+        <div class="slot slot-3">x2</div>
+        <div class="slot slot-4">x5</div>
+        <div class="slot slot-5">x2</div>
+        <div class="slot slot-6">x1</div>
+        <div class="slot slot-7">x0.5</div>
+        <div class="slot slot-8">x0.1</div>
       </div>
 
       <div id="result"></div>
@@ -254,15 +222,15 @@
       <p>📌 Game Rules:</p>
       <ul>
         <li>Min bet: 45 $FLIP | Max: 1,000 $FLIP</li>
-        <li>Choose heads or tails before flip</li>
-        <li>Win 2x if your choice matches</li>
+        <li>Drop the ball → win based on final slot</li>
+        <li>x5 = jackpot! x0.1 = small loss</li>
         <li>Withdrawal requests checked manually</li>
       </ul>
     </div>
   </div>
 
   <!-- Sound Effects -->
-  <audio id="flip-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-drop-on-metal-surface-2034.mp3" preload="auto"></audio>
+  <audio id="drop-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-plastic-balls-falling-2035.mp3" preload="auto"></audio>
   <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-fireworks-celebration-952.mp3" preload="auto"></audio>
   <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
 
@@ -279,7 +247,7 @@
     const maxWithdraw = 10000;
 
     // Sound
-    const flipSound = document.getElementById("flip-sound");
+    const dropSound = document.getElementById("drop-sound");
     const winSound = document.getElementById("win-sound");
     const loseSound = document.getElementById("lose-sound");
 
@@ -289,7 +257,6 @@
       "function transfer(address to, uint256 amount) returns (bool)"
     ];
     let provider, signer, tokenContract, playerAddress;
-    let playerChoice = null;
     let playerBalance = 0;
 
     // Update balance
@@ -317,29 +284,34 @@
       tokenContract = new ethers.Contract(contractAddress, tokenABI, signer);
       document.getElementById("connect").disabled = true;
       document.getElementById("connect").innerText = "Connected ✅";
-      document.getElementById("flip").disabled = false;
+      document.getElementById("drop").disabled = false;
       await updateBalance();
+      initPlinko();
     };
 
-    document.getElementById("choose-heads").onclick = () => {
-      playerChoice = "heads";
-      document.getElementById("choose-heads").classList.add("selected");
-      document.getElementById("choose-tails").classList.remove("selected");
-    };
-    document.getElementById("choose-tails").onclick = () => {
-      playerChoice = "tails";
-      document.getElementById("choose-tails").classList.add("selected");
-      document.getElementById("choose-heads").classList.remove("selected");
-    };
+    // Initialize Plinko Board
+    function initPlinko() {
+      const board = document.getElementById("board");
+      board.innerHTML = "";
+      const pegRows = 10;
+      const pegsPerRow = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const boardWidth = board.offsetWidth;
+      const boardHeight = board.offsetHeight;
 
-    document.getElementById("flip").onclick = async () => {
-      if (!playerChoice) {
-        alert("Please choose heads or tails!");
-        return;
-      }
+      pegsPerRow.forEach((count, row) => {
+        for (let i = 0; i < count; i++) {
+          const peg = document.createElement("div");
+          peg.className = "peg";
+          peg.style.left = `${(i + 1) * (boardWidth / (count + 1)) - 6}px`;
+          peg.style.top = `${(row + 1) * (boardHeight / (pegRows + 2)) - 6}px`;
+          board.appendChild(peg);
+        }
+      });
+    }
 
+    document.getElementById("drop").onclick = async () => {
       const amount = parseFloat(document.getElementById("amount").value);
-      const coin = document.getElementById("coin");
+      const board = document.getElementById("board");
       const result = document.getElementById("result");
 
       if (isNaN(amount) || amount < minBet || amount > maxBet) {
@@ -352,43 +324,43 @@
         return;
       }
 
-      // 🔒 Win chance: Higher bet = lower chance of winning
-      let winChance = 0.50;
-      if (amount > 100) winChance = 0.48;
-      if (amount > 300) winChance = 0.45;
-      if (amount > 600) winChance = 0.42;
-      if (amount >= 1000) winChance = 0.40;
+      // Create ball
+      const ball = document.createElement("div");
+      ball.className = "ball";
+      ball.style.left = `${board.offsetWidth / 2 - 8}px`;
+      ball.style.top = "10px";
+      board.appendChild(ball);
+      dropSound.play();
 
-      const amountInWei = (amount * 10**decimals).toString();
-
-      try {
-        result.innerText = "Flipping...";
-        coin.classList.remove("flip");
-        setTimeout(() => coin.classList.add("flip"), 100);
-        flipSound.play();
-
-        setTimeout(async () => {
-          const random = Math.random();
-          const flipResult = random < 0.5 ? "heads" : "tails";
-          await tokenContract.transfer(gameWallet, amountInWei);
-
-          if (playerChoice === flipResult) {
-            const winAmount = amount * 2;
-            result.innerHTML = `<span class="win-text">🎉 HOORAY! YOU WON ${winAmount} $FLIP!</span>`;
-            winSound.play();
-          } else {
-            result.innerHTML = `<span class="lose-text">💥 LET'S TRY AGAIN</span>`;
-            loseSound.play();
-          }
-
-          playerChoice = null;
-          document.getElementById("choose-heads").classList.remove("selected");
-          document.getElementById("choose-tails").classList.remove("selected");
-          await updateBalance();
-        }, 1200);
-      } catch (err) {
-        result.innerText = "Error: " + (err.message.includes("user rejected") ? "Denied" : "Check balance");
+      // Simulate drop
+      let pos = 0.5; // 0 to 1
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 100));
+        pos += (Math.random() - 0.5) * 0.2;
+        pos = Math.max(0.1, Math.min(0.9, pos));
+        ball.style.left = `${pos * (board.offsetWidth - 16)}px`;
       }
+
+      // Final slot
+      const slotIndex = Math.floor(pos * 9);
+      const multipliers = [0.1, 0.5, 1, 2, 5, 2, 1, 0.5, 0.1];
+      const multiplier = multipliers[slotIndex];
+      const winAmount = amount * multiplier;
+
+      setTimeout(async () => {
+        await tokenContract.transfer(gameWallet, (amount * 10**decimals).toString());
+
+        if (multiplier >= 2) {
+          result.innerHTML = `<span style="color:#00ff88">🎉 HOORAY! YOU WON ${winAmount.toFixed(2)} $FLIP! (x${multiplier})</span>`;
+          winSound.play();
+        } else {
+          result.innerHTML = `<span style="color:red">💥 LET'S TRY AGAIN (x${multiplier})</span>`;
+          loseSound.play();
+        }
+
+        board.removeChild(ball);
+        await updateBalance();
+      }, 500);
     };
 
     // Buy $FLIP Button
