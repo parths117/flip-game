@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>$FLIP Aviator Game</title>
-  <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
+  <title>$FLIP - The Ultimate Meme Coin</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,342 +12,145 @@
       background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
       color: #fff;
       min-height: 100vh;
-      padding: 20px;
       text-align: center;
+      overflow-x: hidden;
     }
     header {
-      margin-bottom: 40px;
+      margin: 50px 0;
       text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
     }
     h1 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 3.2rem;
+      font-size: 4rem;
       color: #00ff88;
-      text-shadow: 0 0 20px #00ff88;
-      margin: 10px 0;
+      text-shadow: 0 0 30px #00ff88;
+      margin: 20px 0;
+    }
+    h2 {
+      font-size: 2.5rem;
+      margin: 30px 0;
     }
     p {
       opacity: 0.9;
-      margin: 10px 0;
+      margin: 15px 0;
       font-size: 1.2rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
     }
-    .game-box {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 25px;
-      padding: 50px;
-      backdrop-filter: blur(12px);
-      border: 2px solid #00ff8830;
-      box-shadow: 0 0 40px rgba(0, 255, 136, 0.2);
-      margin-bottom: 50px;
+    .hero {
+      padding: 80px 20px;
     }
-    .aviator-area {
-      width: 100%;
-      height: 300px;
-      background: #1a1a2e;
-      border: 3px solid #ffd700;
-      border-radius: 15px;
-      position: relative;
-      overflow: hidden;
+    .coin-img {
+      width: 200px;
+      height: 200px;
+      background: url('https://i.imgur.com/Feh7fef.png') no-repeat;
+      background-size: cover;
+      border-radius: 50%;
+      border: 5px solid #ffd700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      margin: 40px auto;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0px); }
+    }
+    .buttons {
       margin: 40px 0;
     }
-    .plane {
-      position: absolute;
-      width: 60px;
-      height: 40px;
-      background: url('https://i.imgur.com/9vFpR0L.png') no-repeat;
-      background-size: contain;
-      left: 50px;
-      top: 200px;
-      transition: none;
-    }
-    .multiplier {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 3rem;
-      color: #00ff88;
-      margin: 20px 0;
-      text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
-    }
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    input, button {
-      padding: 16px 24px;
+    .buttons a {
+      display: inline-block;
       margin: 10px;
-      font-size: 18px;
-      border-radius: 14px;
-      border: none;
-      font-family: 'Roboto', sans-serif;
-    }
-    input {
-      width: 160px;
-      text-align: center;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      border: 2px solid #666;
-    }
-    button.primary {
+      padding: 16px 30px;
+      font-size: 1.4rem;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
       background: linear-gradient(45deg, #00ff88, #00cc6a);
       color: #000;
-      font-weight: bold;
-      cursor: pointer;
+      border-radius: 15px;
+      text-decoration: none;
       box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
-      border: 2px solid #00ff88;
-      font-family: 'Orbitron', sans-serif;
+      transition: 0.3s;
     }
-    button.primary:hover {
-      transform: scale(1.08);
+    .buttons a:hover {
+      transform: scale(1.1);
       box-shadow: 0 8px 30px rgba(0, 255, 136, 0.6);
     }
-
-    #result {
-      font-size: 2rem;
-      font-family: 'Orbitron', sans-serif;
-      margin: 30px;
-      min-height: 40px;
-      text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    .chart {
+      margin: 60px 0;
+      border: 2px solid #00ff8850;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
     }
-
-    .balance {
-      font-size: 1.2rem;
-      margin: 10px 0;
-      color: #00ff88;
-      font-weight: bold;
+    .chart iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
     }
-
-    .buy-section {
-      margin: 30px 0;
-      padding: 20px;
-      background: rgba(255, 255, 255, 0.05);
+    .meme {
+      margin: 60px 0;
+      max-width: 600px;
       border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
     }
-
-    .rules {
-      font-size: 0.9rem;
-      opacity: 0.8;
-      margin: 30px 20px;
-      line-height: 1.6;
+    .social {
+      margin: 60px 0;
+      font-size: 2rem;
     }
-    .rules ul {
-      text-align: left;
-      margin: 20px 40px;
-      padding-left: 20px;
-    }
-    .rules li {
-      margin: 10px 0;
-      position: relative;
-      padding-left: 25px;
-    }
-    .rules li:before {
-      content: "🪙";
-      position: absolute;
-      left: 0;
-      top: 0;
+    .social a {
       color: #00ff88;
+      margin: 0 20px;
+      text-decoration: none;
+    }
+    .footer {
+      margin: 80px 0 40px;
+      font-size: 1rem;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>🪙 $FLIP AVIATOR</h1>
-      <p>Cash out before the plane flies away!</p>
+    <header class="hero">
+      <h1>🪙 $FLIP</h1>
+      <h2>The Ultimate Meme Coin</h2>
+      <p>100% fair launch. 0% tax. 100% degen energy.</p>
+      <p>No roadmap. No promises. Just vibes.</p>
+
+      <div class="coin-img"></div>
+
+      <div class="buttons">
+        <a href="https://pancakeswap.finance/swap?outputCurrency=0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac" target="_blank">Buy $FLIP</a>
+        <a href="https://bscscan.com/token/0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac" target="_blank">BscScan</a>
+      </div>
     </header>
 
-    <div class="game-box">
-      <button id="connect">Connect Wallet</button>
-      <div class="balance" id="balance">Balance: -- $FLIP</div>
-
-      <div class="controls">
-        <input type="number" id="amount" min="45" max="1000" value="45" placeholder="Amount">
-        <input type="number" id="auto-cashout" min="1.1" max="10" step="0.1" value="2.0" placeholder="Auto Cashout">
-        <button id="bet" disabled class="primary">Place Bet</button>
-        <button id="cashout" disabled class="primary">Cash Out</button>
-      </div>
-
-      <div class="multiplier" id="multiplier">1.00x</div>
-
-      <div class="aviator-area" id="aviator-area">
-        <div class="plane" id="plane"></div>
-      </div>
-
-      <div id="result"></div>
+    <div class="chart">
+      <iframe src="https://www.dextools.io/app/en/bnb/pair-explorer/0x1234567890abcdef1234567890abcdef12345678" title="Dextools Chart"></iframe>
     </div>
 
-    <!-- Buy $FLIP Section -->
-    <div class="buy-section">
-      <h3>🪙 Buy $FLIP</h3>
-      <p>Swap BNB for $FLIP directly</p>
-      <button id="buy-flip" class="primary">Buy $FLIP on PancakeSwap</button>
+    <div class="meme">
+      <img src="https://i.imgur.com/5K2Lr5l.jpg" alt="Meme" class="meme" />
     </div>
 
-    <div class="rules">
-      <p>📌 Game Rules:</p>
-      <ul>
-        <li>Min bet: 45 $FLIP | Max: 1,000 $FLIP</li>
-        <li>Plane takes off → multiplier rises</li>
-        <li>Cash out before crash to win</li>
-        <li>Set auto cashout (e.g., 2.0x)</li>
-        <li>If plane crashes, you lose</li>
-        <li>Withdrawal requests checked manually</li>
-      </ul>
+    <div class="social">
+      <a href="https://t.me/yourtelegram" target="_blank">Telegram</a>
+      <a href="https://twitter.com/yourtwitter" target="_blank">Twitter</a>
+    </div>
+
+    <div class="footer">
+      <p>⚠️ $FLIP is a meme coin with no intrinsic value. Do your own research.</p>
+      <p>Contract: 0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac</p>
     </div>
   </div>
-
-  <!-- Sound Effects -->
-  <audio id="takeoff-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-close-rocket-launch-2432.mp3" preload="auto"></audio>
-  <audio id="cashout-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-won-2003.mp3" preload="auto"></audio>
-  <audio id="crash-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.wav" preload="auto"></audio>
-
-  <script>
-    // ✅ Your Contract & Wallet
-    const contractAddress = "0xaaf0d722bbd0bec31cf4111af2d49c53cc7e96ac";
-    const gameWallet = "0xb1B30B17bf726B852958387d5862b7825e844dB2";
-    const decimals = 18;
-
-    // Game settings
-    const minBet = 45;
-    const maxBet = 1000;
-    const minWithdraw = 100;
-    const maxWithdraw = 10000;
-
-    // Sound
-    const takeoffSound = document.getElementById("takeoff-sound");
-    const cashoutSound = document.getElementById("cashout-sound");
-    const crashSound = document.getElementById("crash-sound");
-
-    // Game Logic
-    const tokenABI = [
-      "function balanceOf(address) view returns (uint256)",
-      "function transfer(address to, uint256 amount) returns (bool)"
-    ];
-    let provider, signer, tokenContract, playerAddress;
-    let playerBalance = 0;
-    let gameActive = false;
-    let currentMultiplier = 1.0;
-    let gameLoop = null;
-    let betAmount = 0;
-    let autoCashout = 2.0;
-
-    // Update balance
-    async function updateBalance() {
-      if (!tokenContract || !playerAddress) return;
-      try {
-        const balance = await tokenContract.balanceOf(playerAddress);
-        playerBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
-        document.getElementById("balance").innerText = `Balance: ${playerBalance.toFixed(2)} $FLIP`;
-      } catch (err) {
-        console.error("Balance error:", err);
-        document.getElementById("balance").innerText = "Balance: -- $FLIP";
-      }
-    }
-
-    document.getElementById("connect").onclick = async () => {
-      if (!window.ethereum) {
-        alert("Install MetaMask!");
-        return;
-      }
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      signer = provider.getSigner();
-      playerAddress = await signer.getAddress();
-      tokenContract = new ethers.Contract(contractAddress, tokenABI, signer);
-      document.getElementById("connect").disabled = true;
-      document.getElementById("connect").innerText = "Connected ✅";
-      document.getElementById("bet").disabled = false;
-      await updateBalance();
-    };
-
-    document.getElementById("bet").onclick = async () => {
-      if (gameActive) return;
-
-      betAmount = parseFloat(document.getElementById("amount").value);
-      autoCashout = parseFloat(document.getElementById("auto-cashout").value);
-
-      if (isNaN(betAmount) || betAmount < minBet || betAmount > maxBet) {
-        alert(`Bet must be between ${minBet} and ${maxBet} $FLIP`);
-        return;
-      }
-
-      if (betAmount > playerBalance) {
-        alert("Not enough $FLIP in wallet!");
-        return;
-      }
-
-      // Deduct bet
-      await tokenContract.transfer(gameWallet, (betAmount * 10**decimals).toString());
-      gameActive = true;
-      currentMultiplier = 1.0;
-      document.getElementById("multiplier").innerText = "1.00x";
-      document.getElementById("bet").disabled = true;
-      document.getElementById("cashout").disabled = false;
-      document.getElementById("result").innerText = "";
-
-      // Start game
-      startGame();
-      takeoffSound.play();
-    };
-
-    function startGame() {
-      const plane = document.getElementById("plane");
-      const multiplier = document.getElementById("multiplier");
-      let startTime = Date.now();
-
-      gameLoop = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        
-        // Crash logic: random between 1.5x and 10x
-        const crashPoint = 1.5 + Math.random() * 8.5;
-        currentMultiplier = 1.0 + elapsed * 0.8;
-
-        multiplier.innerText = `${currentMultiplier.toFixed(2)}x`;
-        plane.style.left = `${50 + currentMultiplier * 30}px`;
-        plane.style.top = `${200 - currentMultiplier * 15}px`;
-
-        // Auto cashout
-        if (currentMultiplier >= autoCashout) {
-          cashOut();
-        }
-
-        // Crash
-        if (currentMultiplier >= crashPoint) {
-          clearInterval(gameLoop);
-          gameActive = false;
-          document.getElementById("bet").disabled = false;
-          document.getElementById("cashout").disabled = true;
-          document.getElementById("result").innerHTML = `<span style="color:red">💥 CRASHED AT ${currentMultiplier.toFixed(2)}x</span>`;
-          crashSound.play();
-        }
-      }, 100);
-    }
-
-    document.getElementById("cashout").onclick = () => {
-      if (!gameActive) return;
-      cashOut();
-    };
-
-    function cashOut() {
-      clearInterval(gameLoop);
-      gameActive = false;
-      const winAmount = betAmount * currentMultiplier;
-      document.getElementById("bet").disabled = false;
-      document.getElementById("cashout").disabled = true;
-      document.getElementById("result").innerHTML = `<span style="color:#00ff88">🎉 CASHED OUT AT ${currentMultiplier.toFixed(2)}x → ${winAmount.toFixed(2)} $FLIP!</span>`;
-      cashoutSound.play();
-    }
-
-    // Buy $FLIP Button
-    document.getElementById("buy-flip").onclick = () => {
-      const url = `https://pancakeswap.finance/swap?outputCurrency=${contractAddress}`;
-      window.open(url, "_blank");
-    };
-  </script>
 </body>
 </html>
