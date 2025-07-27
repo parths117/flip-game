@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>$FLIP Plinko Game</title>
+  <title>$FLIP Aviator Game</title>
   <script src="https://unpkg.com/ethers@5.2.0/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -46,53 +46,39 @@
       box-shadow: 0 0 40px rgba(0, 255, 136, 0.2);
       margin-bottom: 50px;
     }
-    .plinko-board {
-      width: 500px;
-      height: 400px;
-      margin: 40px auto;
+    .aviator-area {
+      width: 100%;
+      height: 300px;
       background: #1a1a2e;
       border: 3px solid #ffd700;
       border-radius: 15px;
       position: relative;
       overflow: hidden;
+      margin: 40px 0;
     }
-    .peg {
+    .plane {
       position: absolute;
-      width: 12px;
-      height: 12px;
-      background: #00ff88;
-      border-radius: 50%;
-    }
-    .ball {
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      background: radial-gradient(circle, #fff, #ccc);
-      border-radius: 50%;
-      z-index: 10;
+      width: 60px;
+      height: 40px;
+      background: url('https://i.imgur.com/9vFpR0L.png') no-repeat;
+      background-size: contain;
+      left: 50px;
+      top: 200px;
       transition: none;
     }
-    .slots {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      margin-top: 10px;
-    }
-    .slot {
-      flex: 1;
-      padding: 10px 5px;
-      background: #333;
-      margin: 0 2px;
-      border-radius: 8px;
+    .multiplier {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.1rem;
+      font-size: 3rem;
+      color: #00ff88;
+      margin: 20px 0;
+      text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
     }
-    .slot-0 { background: #d32f2f; }
-    .slot-1, .slot-7 { background: #1976d2; }
-    .slot-2, .slot-6 { background: #388e3c; }
-    .slot-3, .slot-5 { background: #00897b; }
-    .slot-4 { background: #ff8f00; }
-
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
     input, button {
       padding: 16px 24px;
       margin: 10px;
@@ -167,19 +153,13 @@
       top: 0;
       color: #00ff88;
     }
-
-    @media (max-width: 600px) {
-      .plinko-board { width: 300px; height: 300px; }
-      h1 { font-size: 2.2rem; }
-      input, button { font-size: 16px; padding: 12px; }
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🪙 $FLIP PLINKO</h1>
-      <p>Drop the ball. Win up to 5x your bet!</p>
+      <h1>🪙 $FLIP AVIATOR</h1>
+      <p>Cash out before the plane flies away!</p>
     </header>
 
     <div class="game-box">
@@ -188,26 +168,15 @@
 
       <div class="controls">
         <input type="number" id="amount" min="45" max="1000" value="45" placeholder="Amount">
-        <label for="balls">Number of Balls:</label>
-        <input type="number" id="balls" min="1" max="10" value="1" placeholder="Balls">
+        <input type="number" id="auto-cashout" min="1.1" max="10" step="0.1" value="2.0" placeholder="Auto Cashout">
+        <button id="bet" disabled class="primary">Place Bet</button>
+        <button id="cashout" disabled class="primary">Cash Out</button>
       </div>
 
-      <button id="drop" disabled class="primary">DROP BALLS</button>
+      <div class="multiplier" id="multiplier">1.00x</div>
 
-      <div class="plinko-board" id="board">
-        <!-- Pegs and ball will be added by JS -->
-      </div>
-
-      <div class="slots">
-        <div class="slot slot-0">x0.1</div>
-        <div class="slot slot-1">x0.5</div>
-        <div class="slot slot-2">x1</div>
-        <div class="slot slot-3">x2</div>
-        <div class="slot slot-4">x5</div>
-        <div class="slot slot-5">x2</div>
-        <div class="slot slot-6">x1</div>
-        <div class="slot slot-7">x0.5</div>
-        <div class="slot slot-8">x0.1</div>
+      <div class="aviator-area" id="aviator-area">
+        <div class="plane" id="plane"></div>
       </div>
 
       <div id="result"></div>
@@ -224,19 +193,19 @@
       <p>📌 Game Rules:</p>
       <ul>
         <li>Min bet: 45 $FLIP | Max: 1,000 $FLIP</li>
-        <li>Choose number of balls (1–10)</li>
-        <li>Higher balls = lower payouts per ball</li>
-        <li>Drop the ball → win based on final slot</li>
-        <li>x5 = jackpot! x0.1 = small loss</li>
+        <li>Plane takes off → multiplier rises</li>
+        <li>Cash out before crash to win</li>
+        <li>Set auto cashout (e.g., 2.0x)</li>
+        <li>If plane crashes, you lose</li>
         <li>Withdrawal requests checked manually</li>
       </ul>
     </div>
   </div>
 
   <!-- Sound Effects -->
-  <audio id="drop-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-plastic-balls-falling-2035.mp3" preload="auto"></audio>
-  <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-fireworks-celebration-952.mp3" preload="auto"></audio>
-  <audio id="lose-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+  <audio id="takeoff-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-close-rocket-launch-2432.mp3" preload="auto"></audio>
+  <audio id="cashout-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-won-2003.mp3" preload="auto"></audio>
+  <audio id="crash-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.wav" preload="auto"></audio>
 
   <script>
     // ✅ Your Contract & Wallet
@@ -251,9 +220,9 @@
     const maxWithdraw = 10000;
 
     // Sound
-    const dropSound = document.getElementById("drop-sound");
-    const winSound = document.getElementById("win-sound");
-    const loseSound = document.getElementById("lose-sound");
+    const takeoffSound = document.getElementById("takeoff-sound");
+    const cashoutSound = document.getElementById("cashout-sound");
+    const crashSound = document.getElementById("crash-sound");
 
     // Game Logic
     const tokenABI = [
@@ -262,6 +231,11 @@
     ];
     let provider, signer, tokenContract, playerAddress;
     let playerBalance = 0;
+    let gameActive = false;
+    let currentMultiplier = 1.0;
+    let gameLoop = null;
+    let betAmount = 0;
+    let autoCashout = 2.0;
 
     // Update balance
     async function updateBalance() {
@@ -288,98 +262,86 @@
       tokenContract = new ethers.Contract(contractAddress, tokenABI, signer);
       document.getElementById("connect").disabled = true;
       document.getElementById("connect").innerText = "Connected ✅";
-      document.getElementById("drop").disabled = false;
+      document.getElementById("bet").disabled = false;
       await updateBalance();
-      initPlinko();
     };
 
-    // Initialize Plinko Board
-    function initPlinko() {
-      const board = document.getElementById("board");
-      board.innerHTML = "";
-      const pegRows = 10;
-      const pegsPerRow = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-      const boardWidth = board.offsetWidth;
-      const boardHeight = board.offsetHeight;
+    document.getElementById("bet").onclick = async () => {
+      if (gameActive) return;
 
-      pegsPerRow.forEach((count, row) => {
-        for (let i = 0; i < count; i++) {
-          const peg = document.createElement("div");
-          peg.className = "peg";
-          peg.style.left = `${(i + 1) * (boardWidth / (count + 1)) - 6}px`;
-          peg.style.top = `${(row + 1) * (boardHeight / (pegRows + 2)) - 6}px`;
-          board.appendChild(peg);
-        }
-      });
-    }
+      betAmount = parseFloat(document.getElementById("amount").value);
+      autoCashout = parseFloat(document.getElementById("auto-cashout").value);
 
-    document.getElementById("drop").onclick = async () => {
-      const amount = parseFloat(document.getElementById("amount").value);
-      const numBalls = parseInt(document.getElementById("balls").value);
-
-      if (isNaN(amount) || amount < minBet || amount > maxBet) {
+      if (isNaN(betAmount) || betAmount < minBet || betAmount > maxBet) {
         alert(`Bet must be between ${minBet} and ${maxBet} $FLIP`);
         return;
       }
 
-      if (numBalls < 1 || numBalls > 10) {
-        alert("Choose between 1 and 10 balls.");
-        return;
-      }
-
-      if (amount * numBalls > playerBalance) {
+      if (betAmount > playerBalance) {
         alert("Not enough $FLIP in wallet!");
         return;
       }
 
-      // Calculate total bet
-      const totalBet = amount * numBalls;
+      // Deduct bet
+      await tokenContract.transfer(gameWallet, (betAmount * 10**decimals).toString());
+      gameActive = true;
+      currentMultiplier = 1.0;
+      document.getElementById("multiplier").innerText = "1.00x";
+      document.getElementById("bet").disabled = true;
+      document.getElementById("cashout").disabled = false;
+      document.getElementById("result").innerText = "";
 
-      // Simulate each ball drop
-      for (let i = 0; i < numBalls; i++) {
-        await simulateBallDrop(amount, board, result);
-      }
-
-      // Update balance after all balls
-      await updateBalance();
+      // Start game
+      startGame();
+      takeoffSound.play();
     };
 
-    async function simulateBallDrop(ballAmount, board, result) {
-      const ball = document.createElement("div");
-      ball.className = "ball";
-      ball.style.left = `${board.offsetWidth / 2 - 8}px`;
-      ball.style.top = "10px";
-      board.appendChild(ball);
-      dropSound.play();
+    function startGame() {
+      const plane = document.getElementById("plane");
+      const multiplier = document.getElementById("multiplier");
+      let startTime = Date.now();
 
-      let pos = 0.5; // 0 to 1
-      for (let i = 0; i < 20; i++) {
-        await new Promise(r => setTimeout(r, 100));
-        pos += (Math.random() - 0.5) * 0.2;
-        pos = Math.max(0.1, Math.min(0.9, pos));
-        ball.style.left = `${pos * (board.offsetWidth - 16)}px`;
-      }
+      gameLoop = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        
+        // Crash logic: random between 1.5x and 10x
+        const crashPoint = 1.5 + Math.random() * 8.5;
+        currentMultiplier = 1.0 + elapsed * 0.8;
 
-      // Final slot
-      const slotIndex = Math.floor(pos * 9);
-      const multipliers = [0.1, 0.5, 1, 2, 5, 2, 1, 0.5, 0.1];
-      const adjustedMultipliers = multipliers.map(multiplier => multiplier / numBalls);
-      const multiplier = adjustedMultipliers[slotIndex];
-      const winAmount = ballAmount * multiplier;
+        multiplier.innerText = `${currentMultiplier.toFixed(2)}x`;
+        plane.style.left = `${50 + currentMultiplier * 30}px`;
+        plane.style.top = `${200 - currentMultiplier * 15}px`;
 
-      setTimeout(async () => {
-        await tokenContract.transfer(gameWallet, (ballAmount * 10**decimals).toString());
-
-        if (multiplier >= 2) {
-          result.innerHTML += `<span style="color:#00ff88">🎉 HOORAY! YOU WON ${winAmount.toFixed(2)} $FLIP! (x${multiplier})<br></span>`;
-          winSound.play();
-        } else {
-          result.innerHTML += `<span style="color:red">💥 LET'S TRY AGAIN (x${multiplier})<br></span>`;
-          loseSound.play();
+        // Auto cashout
+        if (currentMultiplier >= autoCashout) {
+          cashOut();
         }
 
-        board.removeChild(ball);
-      }, 500);
+        // Crash
+        if (currentMultiplier >= crashPoint) {
+          clearInterval(gameLoop);
+          gameActive = false;
+          document.getElementById("bet").disabled = false;
+          document.getElementById("cashout").disabled = true;
+          document.getElementById("result").innerHTML = `<span style="color:red">💥 CRASHED AT ${currentMultiplier.toFixed(2)}x</span>`;
+          crashSound.play();
+        }
+      }, 100);
+    }
+
+    document.getElementById("cashout").onclick = () => {
+      if (!gameActive) return;
+      cashOut();
+    };
+
+    function cashOut() {
+      clearInterval(gameLoop);
+      gameActive = false;
+      const winAmount = betAmount * currentMultiplier;
+      document.getElementById("bet").disabled = false;
+      document.getElementById("cashout").disabled = true;
+      document.getElementById("result").innerHTML = `<span style="color:#00ff88">🎉 CASHED OUT AT ${currentMultiplier.toFixed(2)}x → ${winAmount.toFixed(2)} $FLIP!</span>`;
+      cashoutSound.play();
     }
 
     // Buy $FLIP Button
